@@ -35,3 +35,10 @@ def clean_image_dataset(source_root, cleaned_root, target_size=(256, 256), blur_
                 image_resized.save(save_path)
 
     print(f"Dataset cleaning and separation completed. Cleaned data stored in: {cleaned_root}")
+# Example usage:
+source_directory = "/Users/SRINIVAS/Desktop/Capstone Project/Post-hurricane"
+cleaned_directory = "/Users/SRINIVAS/Desktop/Capstone Project/Cleaned-Post-hurricane"
+clean_image_dataset(source_directory, cleaned_directory, target_size=(256, 256), blur_threshold=120.0)
+
+# %%
+

@@ -285,27 +285,68 @@ plt.ylabel("Average Intensity")
 plt.show()
 
 # Heatmap of Mean Images
-import matplotlib.pyplot as plt
-import numpy as np
 
-# Reuse your function or define it inline
-def find_mean_img(full_mat, size=(128, 128)):
-    return np.mean(full_mat, axis=0).reshape(size)
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing import image
+from scipy.ndimage import gaussian_filter
+
+# Set your training directory
+train_dir = "/Users/SRINIVAS/Documents/Capstone Project/Post-hurricane/train_another"
+damage_dir = os.path.join(train_dir, "damage")
+no_damage_dir = os.path.join(train_dir, "no_damage")
+
+# Utility to crop center of image
+def crop_center(img, cropx, cropy):
+    y, x = img.shape
+    startx = x // 2 - cropx // 2
+    starty = y // 2 - cropy // 2    
+    return img[starty:starty + cropy, startx:startx + cropx]
+
+# Load and preprocess images
+def load_images(path, filenames, size=(128, 128), crop_size=(128, 128)):
+    image_matrix = []
+    for fn in filenames:
+        try:
+            fp = os.path.join(path, fn)
+            img = image.load_img(fp, target_size=size, color_mode='rgb')
+            arr = image.img_to_array(img)
+            gray = np.mean(arr, axis=2)  # Convert to grayscale
+            if crop_size != size:
+                gray = crop_center(gray, *crop_size)
+            image_matrix.append(gray.ravel())
+        except Exception as e:
+            print(f"Skipping {fn}: {e}")
+    return np.array(image_matrix)
+
+# Get filenames
+damage_files = [f for f in os.listdir(damage_dir) if f.endswith(".jpeg")][:1000]  # Adjust sample size as needed
+no_damage_files = [f for f in os.listdir(no_damage_dir) if f.endswith(".jpeg")][:1000]
+
+# Load images
+damage_arrays = load_images(damage_dir, damage_files, size=(128, 128), crop_size=(128, 128))
+no_damage_arrays = load_images(no_damage_dir, no_damage_files, size=(128, 128), crop_size=(128, 128))
+
+# Function to calculate and optionally sharpen mean image
+def find_mean_img(full_mat, title, size=(128, 128), sharpen=True):
+    mean_img = np.mean(full_mat, axis=0).reshape(size)
+    if sharpen:
+        mean_img = gaussian_filter(mean_img, sigma=1)
+    return mean_img
 
 # Compute mean images
-damage_mean = find_mean_img(damage_arrays, size=(128, 128))
-no_damage_mean = find_mean_img(no_damage_arrays, size=(128, 128))
+damage_mean = find_mean_img(damage_arrays, 'DAMAGE', size=(128, 128))
+no_damage_mean = find_mean_img(no_damage_arrays, 'NO DAMAGE', size=(128, 128))
 
-# === Plot both with consistent vmin/vmax and plasma colormap ===
+# === Plot both with consistent color scale and plasma colormap ===
 fig, axs = plt.subplots(2, 1, figsize=(6, 10))
 
-# DAMAGE heatmap
 im1 = axs[0].imshow(damage_mean, cmap='plasma', vmin=85, vmax=110)
 axs[0].set_title("Average DAMAGE")
 axs[0].axis('off')
 plt.colorbar(im1, ax=axs[0], fraction=0.046, pad=0.04)
 
-# NO DAMAGE heatmap
 im2 = axs[1].imshow(no_damage_mean, cmap='plasma', vmin=85, vmax=110)
 axs[1].set_title("Average NO DAMAGE")
 axs[1].axis('off')
@@ -341,6 +382,7 @@ plt.colorbar(im2, ax=axs[1], fraction=0.046, pad=0.04)
 
 plt.tight_layout()
 plt.show()
+
 
 # Contrast Between Average Images
 
@@ -508,20 +550,17 @@ all_gdf['file_path'] = all_gdf.apply(
     axis=1
 )
 
+# Compute file size in kilobytes
+all_gdf['file_size_kb'] = all_gdf['file_path'].apply(lambda x: os.path.getsize(x) / 1024)
 
-valid_gdf['file_size_kb'] = valid_gdf['file_path'].apply(lambda x: os.path.getsize(x) / 1024)
+# Map damage labels to numeric
+all_gdf['damage'] = all_gdf['label'].map({'no_damage': 0, 'damage': 1})
 
-# Preview actual file sizes
-print(valid_gdf[['file_path', 'file_size_kb']].head())
-
-
-valid_gdf['damage'] = valid_gdf['label'].map({'no_damage': 0, 'damage': 1})
-
+# Plot boxplot of file sizes by class
 plt.figure(figsize=(6, 5))
-sns.boxplot(data=valid_gdf, x='damage', y='file_size_kb', palette='Set2')
-
-plt.xlabel("damage")
-plt.ylabel("file_size (KB)")
+sns.boxplot(data=all_gdf, x='damage', y='file_size_kb', palette='Set2')
+plt.xlabel("Damage (0 = No, 1 = Yes)")
+plt.ylabel("File Size (KB)")
 plt.title("File Size Distribution by Damage Class")
 plt.tight_layout()
 plt.show()

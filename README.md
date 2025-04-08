@@ -9,7 +9,6 @@ We plan to deploy three models: CNN, MobileNet, and ResNet-50, with a focus on u
 
 ---
 
-![Project Overview](image.png)
 
 ## 📌 Project Overview
 This project aims to develop a machine learning system to classify hurricane-damaged buildings from satellite images. By combining CNN architectures with domain-specific image processing techniques, our system enables rapid post-disaster damage assessments.

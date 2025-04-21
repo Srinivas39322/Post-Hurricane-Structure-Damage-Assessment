@@ -168,3 +168,10 @@ for epoch in range(num_epochs):
 os.makedirs("models", exist_ok=True)
 torch.save(model.state_dict(), "models/simple_cnn_model.pt")
 print("✅ Best CNN model saved to models/simple_cnn_model.pt")
+
+==================================================================================================================================================
+
+# ===============================
+# Resnet50 Model - Baseline
+# ===============================
+

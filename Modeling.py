@@ -269,3 +269,92 @@ print(f"📦 Best model saved at: {best_model_path}")
 
 ==================================================================================================================================================
 
+# ===============================
+# Resnet50 Model - Final
+# ===============================
+
+import os
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms, models
+from torchvision.models import ResNet50_Weights
+from torch.utils.data import DataLoader
+
+# --- Paths ---
+train_dir = "Post-hurricane/train_another"
+val_dir = "Post-hurricane/validation_another"
+save_path = "models/new/best_resnet50_model.pt"
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+# --- Device ---
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("🖥️ Using device:", device)
+
+# --- Transforms ---
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225]),
+])
+
+# --- Datasets ---
+train_dataset = datasets.ImageFolder(train_dir, transform=transform)
+val_dataset = datasets.ImageFolder(val_dir, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32)
+
+# --- Model ---
+model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
+model.fc = nn.Linear(model.fc.in_features, 2)  # 2 classes: damage / no_damage
+model = model.to(device)
+
+# --- Loss & Optimizer ---
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+
+# --- Training ---
+best_acc = 0.0
+epochs = 10
+
+for epoch in range(epochs):
+    model.train()
+    running_loss = 0.0
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+
+    # --- Validation ---
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, preds = torch.max(outputs, 1)
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+
+    val_acc = correct / total
+    print(f"Epoch {epoch+1}, Loss: {running_loss:.4f}, Val Acc: {val_acc:.4f}")
+
+    # Save best model
+    if val_acc > best_acc:
+        best_acc = val_acc
+        torch.save(model.state_dict(), save_path)
+        print("✅ Model improved. Saved!")
+
+print(f"✅ Training complete. Best Acc: {best_acc:.4f}")
+
+==================================================================================================================================================
+

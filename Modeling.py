@@ -174,4 +174,98 @@ print("✅ Best CNN model saved to models/simple_cnn_model.pt")
 # ===============================
 # Resnet50 Model - Baseline
 # ===============================
+import os
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# --- Config ---
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 32
+IMG_SIZE = 224
+NUM_CLASSES = 2
+EPOCHS = 50
+
+# --- Transforms ---
+transform_train = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+transform_val = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+# --- Datasets ---
+train_dir = "Post-hurricane/train_another"
+val_dir = "Post-hurricane/validation_another"
+train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
+val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
+
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
+
+# --- ResNet50 Model ---
+model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+in_features = model.fc.in_features
+model.fc = nn.Linear(in_features, NUM_CLASSES)
+model = model.to(DEVICE)
+
+# --- Loss and Optimizer ---
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+# --- Prepare to Save Best Model ---
+best_val_acc = 0.0
+model_dir = "models"
+os.makedirs(model_dir, exist_ok=True)
+best_model_path = os.path.join(model_dir, "best_resnet50_model.pt")
+
+# --- Training and Evaluation ---
+for epoch in range(EPOCHS):
+    model.train()
+    total_loss = 0
+    correct = 0
+    for images, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
+        images, labels = images.to(DEVICE), labels.to(DEVICE)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        preds = outputs.argmax(dim=1)
+        correct += (preds == labels).sum().item()
+
+    # --- Validation ---
+    model.eval()
+    val_correct = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
+            outputs = model(images)
+            preds = outputs.argmax(dim=1)
+            val_correct += (preds == labels).sum().item()
+
+    val_acc = val_correct / len(val_dataset)
+
+    # Save best model based on validation accuracy
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        torch.save(model.state_dict(), best_model_path)
+        print(f"✅ Best model saved at epoch {epoch+1} to: {best_model_path}")
+
+    print(f"\nEpoch {epoch+1}, Loss: {total_loss:.4f}, Train Acc: {correct/len(train_dataset):.4f}, Val Acc: {val_acc:.4f}\n")
+
+print("🎉 ResNet50 Training Complete")
+print(f"🏆 Best Validation Accuracy: {best_val_acc:.4f}")
+print(f"📦 Best model saved at: {best_model_path}")
+
+==================================================================================================================================================
 

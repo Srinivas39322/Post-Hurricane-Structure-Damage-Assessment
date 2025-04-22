@@ -1,92 +1,151 @@
 ![Hurricane Damage](Hurricane_Damage.jpeg)
 
-# Hurricane Impact Analysis System 🌪️
-**Group 8: Tenneti Srinivas Saiteja | Namratha Prakash | Lakshmi Sreya Rapolu**  
-*A Machine Learning Approach to Satellite Image Analysis*
+# 🌪️ Post-Hurricane Damage Detection with Deep Learning
 
-We plan to deploy three models: CNN, MobileNet, and ResNet-50, with a focus on using transfer learning techniques. These techniques enable the models to leverage large pre-trained datasets, facilitating a more generalized and efficient learning process that is well-suited to categorizing satellite imagery where data may be less detailed.
-
-
-
+A machine learning-powered solution for rapid post-disaster assessment using aerial imagery. This project leverages deep learning models—ResNet50, CNN, and EfficientNet—to classify structural damage caused by hurricanes. Designed for real-time predictions via a Streamlit web interface.
 
 ---
-
 
 ## 📌 Project Overview
-This project aims to develop a machine learning system to classify hurricane-damaged buildings from satellite images. By combining CNN architectures with domain-specific image processing techniques, our system enables rapid post-disaster damage assessments.
+
+Hurricanes in the U.S. cause an average of **$21.5 billion** in damage per event, with over 10 billion-dollar storms annually between 2015 and 2020. Accurate and rapid **post-hurricane damage assessment** is essential for emergency response, insurance processing, and recovery planning.
+
+This project builds an AI system that:
+- Detects structural damage from **aerial images** post-hurricane
+- Utilizes **transfer learning** with **ResNet50 and EfficientNet** models
+- Deploys a **Streamlit web app** for interactive image uploads and predictions
 
 ---
 
-## 📂 Contents
-1. [Data Acquisition & Preprocessing](#1-data-acquisition-and-preprocessing)
-2. [Exploratory Data Analysis (EDA)](#2-exploratory-data-analysis-eda)
-3. [Feature Engineering](#3-feature-engineering)
-4. [Data Augmentation](#4-data-augmentation)
-5. [Model Training](#6-model-selection-and-training)
-6. [Evaluation](#7-evaluation-and-iteration)
-7. [Web App Deployment](#8-web-application-development-for-deployment)
-8. [Cloud Infrastructure](#9-cloud-deployment-and-management)
+## 👩‍💻 Team Members
+- **Srinivas Saiteja Tenneti**
+- **Namratha Prakash**
+- **Lakshmi Sreya Rapolu**
 
 ---
 
-## 1. Data Acquisition and Preprocessing
-- Accessed datasets using Python libraries like NumPy and PIL.
-- Resized all images to `128x128` pixels for uniformity.
+## 🧠 Model Highlights
 
-## 2. Exploratory Data Analysis (EDA)
-- Performed visual inspection and class distribution analysis.
-- Assessed image quality to detect potential classification challenges.
+### 🏗️ Custom CNN (from scratch)
+- Input: `128x128 RGB images`
+- Architecture: 3 Conv Layers + 4 FC Layers
+- Accuracy:
+  - ✅ Train: 99.48%
+  - ✅ Validation: 96.25%
 
-## 3. Feature Engineering
-- Scaled pixel values to `[0, 1]`.
-- Applied edge detection (Sobel, Canny) and texture analysis (GLCM).
-- Implemented PCA for dimensionality reduction and watershed segmentation.
+---
 
-## 4. Data Augmentation
-- Used PyTorch to apply:
-  - Rotation
-  - Zooming
-  - Horizontal flipping  
-This enriched the dataset for better model generalization.
+### 🦾 ResNet50 (Transfer Learning)
+- Input: `224x224`, ImageNet normalized
+- Accuracy:
+  - ✅ Validation: **99.50%**
+  - ✅ Test Set: **99.61%**
+- 🧠 Best model for generalization and deployment
 
-## 5. Data Preparation
-- **Training:** `train_another` — 5,000 images/class  
-- **Validation:** `validation_another` — 1,000 images/class  
-- **Test (Unbalanced):** 8,000 damaged | 1,000 undamaged  
-- **Test (Balanced):** 1,000 per class  
-- Batched using `PyTorch DataLoader`.
+---
 
-## 6. Model Selection and Training
-- Fine-tuned CNN architectures to handle `128x128` inputs.
-- Leveraged **MobileNet** and **ResNet-50** with transfer learning.
-- Integrated decaying learning rate schedules to improve convergence.
+### 🌱 EfficientNet Models
+#### EfficientNet-B0:
+- Accuracy: 99.30%
+- Lightweight and fast but slightly underperformed vs. ResNet50
 
-## 7. Evaluation and Iteration
-- Metrics used: `accuracy`, `precision`, `recall`, `F1-score`.
-- Continuous refinement of models and preprocessing pipelines.
+#### EfficientNet-V2-S:
+- **Frozen:** 91.7% accuracy — very fast but limited learning
+- **Fine-tuned (Last 2 Blocks):** 97.95% — efficient and effective
 
-## 8. Web Application Development for Deployment
-- **Backend:** Flask for Python model integration.
-- **Frontend:** HTML, CSS, JS (with potential React/Angular).
-- **UI:** Dashboard for image upload, prediction results, and damage maps.
+---
 
-## 9. Cloud Deployment and Management
-- **Platform:** AWS (EC2, S3, Elastic Beanstalk).
-- **Focus:** Scalability and high availability during disaster response.
+## 📊 Exploratory Data Analysis (EDA)
+
+- **Pixel Mean & Std Dev** revealed subtle texture differences between damaged and undamaged classes.
+- **PCA**:
+  - Damaged: 70% variance in just 19 components
+  - Undamaged: Needed 56 components
+- **Pixel Intensity**: Damaged areas tend to be darker and more uniform.
+- **Geospatial Bias**: Model risks learning location-based patterns — spatial regularization needed.
+
+---
+
+## 🛰️ Dataset
+
+- **Source**: University of Washington Disaster Data Science Lab
+- **Location**: Houston, TX (Post Hurricane Harvey)
+- **Images**: 14,000 (7,000 damaged, 7,000 undamaged)
+- **Splits**:
+  - `Train`: 8,000
+  - `Validation`: 2,000
+  - `Test`: 2,000 (also tested on unbalanced and balanced subsets)
+
+---
+
+## 🛠️ Key Techniques Used
+
+- Data Normalization & Augmentation (`RandomHorizontalFlip`)
+- PCA for feature reduction
+- Custom & pre-trained models
+- Evaluation metrics: Accuracy, Confusion Matrix, F1-score
+- Streamlit-based real-time interface for multi-image upload
+
+---
+
+## 💻 Streamlit Web App
+
+Interactive interface for uploading and classifying images.
+
+### Features:
+- Multi-image upload with grid view
+- Class predictions (damage / no damage)
+- Confidence scores with visual indicators
+- Session-wise prediction history
+- Optional visualization of transformed model input
+- Lightweight and runs locally or on any Streamlit-compatible server
+
+---
+
+## 📈 Sample Result Snapshot
+
+- ✅ **ResNet50 Confusion Matrix**
+  - True Positives: 7,980
+  - False Negatives: 20
+  - True Negatives: 985
+  - False Positives: 15
+  - Accuracy: **99.61%**
 
 ---
 
 ## 🚀 Future Work
-- Add support for multi-class damage levels.
-- Integrate GIS for geo-tagged predictions.
-- Expand to include fire, flood, or earthquake scenarios.
+
+- Multi-class damage levels (minor/moderate/severe)
+- Integrate Grad-CAM for visual attention maps
+- Expand to detect other disaster types: fire, floods, earthquakes
+- Incorporate geospatial overlays using GIS libraries
 
 ---
 
-## 📸 Sample Visuals
-(Place additional model output or EDA images here if available)
+## 📷 Sample Visuals (Coming Soon)
+
+- Eigenimages from PCA
+- Geospatial distribution heatmaps
+- Grad-CAM overlays (model attention)
 
 ---
+
+## 📬 Contact
+
+For questions or contributions, reach out via GitHub Issues or connect with the team:
+
+- **[Srinivas Saiteja Tenneti](https://www.linkedin.com/in/srinivas-saiteja-tenneti/)**
+
+---
+
+## 🔗 References
+- [Dataset on IEEE Dataport](https://ieee-dataport.org/open-access/detecting-damaged-buildings-post-hurricane-satellite-imagery-based-customized)
+- [University of Washington Disaster Data Science Lab](https://disasterdatascience.org/)
+
+---
+
+> “In the aftermath of a hurricane, every second counts. With AI-driven tools, response teams can act faster and smarter.” – Group 8
+
 
 ## 📬 Contact
 For questions, contact any team member via this repository's issue tracker.

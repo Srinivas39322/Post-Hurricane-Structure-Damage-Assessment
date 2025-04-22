@@ -6,6 +6,13 @@ A machine learning-powered solution for rapid post-disaster assessment using aer
 
 ---
 
+## 👩‍💻 Team Members
+- **Srinivas Saiteja Tenneti**
+- **Namratha Prakash**
+- **Lakshmi Sreya Rapolu**
+
+---
+
 ## 📌 Project Overview
 
 Hurricanes in the U.S. cause an average of **$21.5 billion** in damage per event, with over 10 billion-dollar storms annually between 2015 and 2020. Accurate and rapid **post-hurricane damage assessment** is essential for emergency response, insurance processing, and recovery planning.
@@ -17,12 +24,39 @@ This project builds an AI system that:
 
 ---
 
-## 👩‍💻 Team Members
-- **Srinivas Saiteja Tenneti**
-- **Namratha Prakash**
-- **Lakshmi Sreya Rapolu**
+## 🛰️ Dataset
+
+- **Source**: University of Washington Disaster Data Science Lab
+- **Location**: Houston, TX (Post Hurricane Harvey)
+- **Images**: 14,000 (7,000 damaged, 7,000 undamaged)
+- **Splits**:
+  - `Train`: 8,000
+  - `Validation`: 2,000
+  - `Test`: 2,000 (also tested on unbalanced and balanced subsets)
 
 ---
+
+## 🛠️ Key Techniques Used
+
+- Data Normalization & Augmentation (`RandomHorizontalFlip`)
+- PCA for feature reduction
+- Custom & pre-trained models
+- Evaluation metrics: Accuracy, Confusion Matrix, F1-score
+- Streamlit-based real-time interface for multi-image upload
+
+---
+
+## 📊 Exploratory Data Analysis (EDA)
+
+- **Pixel Mean & Std Dev** revealed subtle texture differences between damaged and undamaged classes.
+- **PCA**:
+  - Damaged: 70% variance in just 19 components
+  - Undamaged: Needed 56 components
+- **Pixel Intensity**: Damaged areas tend to be darker and more uniform.
+- **Geospatial Bias**: Model risks learning location-based patterns — spatial regularization needed.
+
+---
+
 
 ## 🧠 Model Highlights
 
@@ -52,39 +86,6 @@ This project builds an AI system that:
 #### EfficientNet-V2-S:
 - **Frozen:** 91.7% accuracy — very fast but limited learning
 - **Fine-tuned (Last 2 Blocks):** 97.95% — efficient and effective
-
----
-
-## 📊 Exploratory Data Analysis (EDA)
-
-- **Pixel Mean & Std Dev** revealed subtle texture differences between damaged and undamaged classes.
-- **PCA**:
-  - Damaged: 70% variance in just 19 components
-  - Undamaged: Needed 56 components
-- **Pixel Intensity**: Damaged areas tend to be darker and more uniform.
-- **Geospatial Bias**: Model risks learning location-based patterns — spatial regularization needed.
-
----
-
-## 🛰️ Dataset
-
-- **Source**: University of Washington Disaster Data Science Lab
-- **Location**: Houston, TX (Post Hurricane Harvey)
-- **Images**: 14,000 (7,000 damaged, 7,000 undamaged)
-- **Splits**:
-  - `Train`: 8,000
-  - `Validation`: 2,000
-  - `Test`: 2,000 (also tested on unbalanced and balanced subsets)
-
----
-
-## 🛠️ Key Techniques Used
-
-- Data Normalization & Augmentation (`RandomHorizontalFlip`)
-- PCA for feature reduction
-- Custom & pre-trained models
-- Evaluation metrics: Accuracy, Confusion Matrix, F1-score
-- Streamlit-based real-time interface for multi-image upload
 
 ---
 

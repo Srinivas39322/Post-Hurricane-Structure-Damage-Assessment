@@ -116,10 +116,11 @@ Principal Component Analysis (PCA) was used to extract key visual patterns:
 | No Damage   | 56                                 |
 
 
-![With damage: 19 principle components](https://github.com/user-attachments/assets/f3948859-619b-4baf-a833-d15f72b5a2ab)
+![image](https://github.com/user-attachments/assets/f3948859-619b-4baf-a833-d15f72b5a2ab)
+*Figure 1: With damage: 19 principle components*
 
-![No damage: 56 principle components](https://github.com/user-attachments/assets/34b2ab83-34ae-4f0e-8a48-48f85660c5c8)
-
+![image](https://github.com/user-attachments/assets/34b2ab83-34ae-4f0e-8a48-48f85660c5c8)
+*Figure 2: No damage: 56 principle components*
 
 > 🧠 **Insight**: Damaged images have more visual consistency, making them easier for models to learn from.
 

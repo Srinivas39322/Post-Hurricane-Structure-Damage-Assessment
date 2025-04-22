@@ -588,4 +588,384 @@ Minor misclassifications still occur, which could impact edge cases in real-worl
 
 ==================================================================================================================================================
 
+# ---------------------------------------------
+# Transfer Learning: EfficientNet-B0 (PyTorch)
+# ---------------------------------------------
 
+import os
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# --- Config ---
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 32
+IMG_SIZE = 224
+NUM_CLASSES = 2
+EPOCHS = 10
+
+# Ensure model directory exists
+os.makedirs("models", exist_ok=True)
+
+# --- Transforms ---
+transform_train = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+transform_val = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+# --- Datasets ---
+train_dir = "Post-hurricane/train_another"
+val_dir = "Post-hurricane/validation_another"
+train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
+val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
+
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
+
+# --- EfficientNet-B0 Model ---
+model = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.DEFAULT)
+in_features = model.classifier[1].in_features
+model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
+model = model.to(DEVICE)
+
+# --- Training and Evaluation ---
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+best_val_acc = 0.0
+for epoch in range(EPOCHS):
+    model.train()
+    total_loss = 0
+    correct = 0
+    for images, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
+        images, labels = images.to(DEVICE), labels.to(DEVICE)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        preds = outputs.argmax(dim=1)
+        correct += (preds == labels).sum().item()
+
+    # --- Validation ---
+    model.eval()
+    val_correct = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
+            outputs = model(images)
+            preds = outputs.argmax(dim=1)
+            val_correct += (preds == labels).sum().item()
+    val_acc = val_correct / len(val_dataset)
+
+    print(f"\nEpoch {epoch+1}, Loss: {total_loss:.4f}, Train Acc: {correct/len(train_dataset):.4f}, Val Acc: {val_acc:.4f}\n")
+
+    # --- Save Best Model ---
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        torch.save(model.state_dict(), "models/best_efficientnet_b0.pt")
+        print("✅ Best EfficientNet-B0 model saved!")
+
+print("✅ EfficientNet-B0 Training Complete. Best Val Accuracy: {:.4f}".format(best_val_acc))
+
+"""
+● Architecture: Transfer learning with pretrained EfficientNet-B0, modified for binary
+classification (damage, no_damage).
+● Input: 224×224 images, ImageNet normalization; basic augmentation (horizontal flip).
+● Training:
+○ 10 epochs | Batch size: 32
+○ Optimizer: Adam (lr=1e-4)
+○ Device: CUDA-enabled GPU
+
+�� Performance Highlights
+● Best Validation Accuracy: 99.30% (Epoch 9)
+● Training Accuracy: Reached 99.93%
+● Model saved to: models/best_efficientnet_b0.pt
+Strengths
+● High accuracy with minimal hyperparameter tuning.
+● Lightweight and efficient — fast training cycles and low resource usage.
+● Consistent validation performance from early epochs onward.
+
+Limitations
+● Risk of overfitting: High training accuracy suggests possible overfitting despite good
+validation scores.
+● Shallow adaptation: The full model was used without freezing or fine-tuning selective
+layers, limiting specialization to hurricane-related imagery.
+● Not optimized for edge cases: May misclassify subtle or low-contrast damage regions
+without further refinement.
+"""
+==================================================================================================================================================
+
+# ---------------------------------------------
+# EfficientNet-V2-S (Frozen Feature Extractor)
+# ---------------------------------------------
+
+import os
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# --- Config ---
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 32
+IMG_SIZE = 224
+NUM_CLASSES = 2
+EPOCHS = 10
+BEST_MODEL_PATH = "models/best_efficientnetv2_frozen.pt"
+
+# --- Transforms ---
+transform = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
+# --- Datasets & Loaders ---
+train_data = datasets.ImageFolder("Post-hurricane/train_another", transform=transform)
+val_data = datasets.ImageFolder("Post-hurricane/validation_another", transform=transform)
+
+train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_data, batch_size=BATCH_SIZE)
+
+# --- Model: EfficientNet-V2-S (Frozen) ---
+model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+for param in model.features.parameters():
+    param.requires_grad = False
+
+model.classifier[1] = nn.Linear(model.classifier[1].in_features, NUM_CLASSES)
+model = model.to(device)
+
+# --- Loss, Optimizer ---
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
+
+# --- Training Loop ---
+best_val_acc = 0.0
+
+for epoch in range(EPOCHS):
+    model.train()
+    loss_sum, correct = 0, 0
+
+    for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad()
+        out = model(x)
+        loss = criterion(out, y)
+        loss.backward()
+        optimizer.step()
+
+        loss_sum += loss.item()
+        correct += (out.argmax(1) == y).sum().item()
+
+    train_acc = correct / len(train_data)
+
+    # --- Validation ---
+    model.eval()
+    val_correct = 0
+    with torch.no_grad():
+        for x, y in val_loader:
+            x, y = x.to(device), y.to(device)
+            pred = model(x).argmax(1)
+            val_correct += (pred == y).sum().item()
+
+    val_acc = val_correct / len(val_data)
+    print(f"Epoch {epoch+1} | Train Acc: {train_acc:.4f} | Val Acc: {val_acc:.4f}")
+
+    # --- Save Best Model ---
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        os.makedirs("models", exist_ok=True)
+        torch.save(model.state_dict(), BEST_MODEL_PATH)
+        print(f"✅ Best model saved to {BEST_MODEL_PATH}")
+
+print(f"🏁 Training Complete. Best Val Accuracy: {best_val_acc:.4f}")
+
+"""
+�� Model Summary
+● Architecture: Pretrained EfficientNet-V2-S, used as a frozen feature extractor. Only
+the classifier layer is trainable.
+● Input: 224×224 RGB images with standard ImageNet normalization.
+● Training Details:
+○ Epochs: 10
+○ Batch size: 32
+○ Optimizer: Adam (lr=1e-4)
+○ Loss: CrossEntropyLoss
+○ Device: CUDA (GPU)
+
+Performance Summary
+● Best Validation Accuracy: 91.70% (Epoch 10)
+● Training Accuracy: Increased from 77.2% (Epoch 1) to 89.0% (Epoch 10)
+● Model saved after every improvement in validation accuracy:
+○ Early peak at Epoch 4: 90.30%
+○ Final saved model at Epoch 10: 91.70%
+● Training Time Efficiency: ~21 seconds/epoch — very fast, due to freezing all feature
+layers
+
+Strengths
+● Extremely fast training due to frozen base layers — minimal compute overhead.
+● Stable learning with gradual improvement across epochs.
+● Good choice for low-resource environments or when rapid training is needed.
+
+Limitations
+● Lower final accuracy compared to fine-tuned EfficientNet-B0 or V2 models.
+● Limited feature adaptation — freezing all feature layers prevents learning domain-
+specific patterns (e.g., hurricane-specific textures).
+● Plateaued quickly — improvement tapered after Epoch 7, indicating the model reached
+its potential early.
+
+"""
+==================================================================================================================================================
+
+# ---------------------------------------------
+# EfficientNet V2 finetuned
+# ---------------------------------------------
+
+import os
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# Configuration
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 32
+IMG_SIZE = 224
+NUM_CLASSES = 2
+EPOCHS = 10
+BEST_MODEL_PATH = "models/best_efficientnetv2_finetuned.pt"
+
+# Transforms
+transform = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
+# Load datasets
+train_dataset = datasets.ImageFolder("Post-hurricane/train_another", transform=transform)
+val_dataset = datasets.ImageFolder("Post-hurricane/validation_another", transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
+
+# Load EfficientNet-V2-S with pretrained weights
+model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+
+# Fine-tune only the last two blocks
+for name, param in model.named_parameters():
+    if "features.6" in name or "features.7" in name:
+        param.requires_grad = True
+    else:
+        param.requires_grad = False
+
+# Replace classifier
+in_features = model.classifier[1].in_features
+model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
+model = model.to(device)
+
+# Loss and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
+
+# Best model tracking
+best_val_acc = 0.0
+
+# Training loop
+for epoch in range(EPOCHS):
+    model.train()
+    running_loss = 0
+    correct = 0
+
+    for images, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
+        images, labels = images.to(device), labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        correct += (outputs.argmax(1) == labels).sum().item()
+
+    # Validation
+    model.eval()
+    val_correct = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            preds = model(images).argmax(1)
+            val_correct += (preds == labels).sum().item()
+
+    train_acc = correct / len(train_dataset)
+    val_acc = val_correct / len(val_dataset)
+    print(f"Epoch {epoch+1}: Train Acc = {train_acc:.4f} | Val Acc = {val_acc:.4f}")
+
+    # Save best model
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        os.makedirs("models", exist_ok=True)
+        torch.save(model.state_dict(), BEST_MODEL_PATH)
+        print(f"✅ Best model saved to {BEST_MODEL_PATH}")
+
+print(f"🏁 Training Complete. Best Val Accuracy: {best_val_acc:.4f}")
+
+"""
+Model: Pretrained EfficientNet-V2-S with the last two feature blocks and
+classifier unfrozen for fine-tuning
+Input: 224×224, ImageNet-normalized
+Training: 10 epochs | Batch size: 32 | Adam (lr=1e-5) | CrossEntropyLoss
+| CUDA
+Task: Binary classification – damage vs no_damage
+Performance
+● Best Validation Accuracy: 97.95% (Epoch 10)
+● Training Accuracy: Peaked at 99.32%
+● Consistent growth across epochs with no overfitting
+● Model saved 8 times, indicating continuous improvement
+
+Strengths
+● Selective fine-tuning enabled efficient learning and high generalization
+● Fast training (~30s/epoch), ideal for rapid experimentation
+
+Limitations
+
+● Underperformed vs. EfficientNet-B0 (99.30%) despite fine-tuning
+● Lower than expected peak accuracy for EfficientNet-V2
+● Requires careful layer control to balance learning and overfitting
+
+"""
+==================================================================================================================================================
+
+"""
+Why EfficientNet Was Not Selected
+● Lower Validation Accuracy:
+EfficientNet achieved a best validation accuracy of 99.3%, while the final ResNet50
+model reached a superior 99.50%, consistently outperforming across epochs.
+● No Clear Advantage in Speed or Efficiency:
+Although training times were comparable (~30s/epoch), ResNet50 converged faster and
+delivered higher accuracy with fewer epochs in earlier experiments.
+● Less Robust on Edge Cases:
+The EfficientNet model’s learning plateaued after Epoch 7, suggesting limited
+adaptability beyond general patterns, unlike ResNet50 which handled subtle damage
+indicators more reliably.
+● Deployment Readiness:
+ResNet50 is already integrated, tested, and validated on test data with a 99.61% test
+accuracy and clear confusion matrix performance, offering greater confidence for
+deployment.
+"""

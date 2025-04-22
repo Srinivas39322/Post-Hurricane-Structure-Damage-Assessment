@@ -130,7 +130,7 @@ We compared the mean intensity of the first 1,000 pixels across classes:
 - **Damage**: Lower, noisier intensity — possibly due to shadows and debris  
 - **No Damage**: Higher and smoother intensity — cleaner rooftops
 
-<img width="313" alt="image" src="https://github.com/user-attachments/assets/b8c5af9a-a1d2-4d86-9058-cc7bf68739f1" />
+<img width="400" height="320" alt="image" src="https://github.com/user-attachments/assets/b8c5af9a-a1d2-4d86-9058-cc7bf68739f1" />
 
 
 ---

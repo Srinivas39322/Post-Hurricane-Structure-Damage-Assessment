@@ -223,22 +223,6 @@ Interactive interface for uploading and classifying images.
 
 ---
 
-## 📷 Sample Visuals (Coming Soon)
-
-- Eigenimages from PCA
-- Geospatial distribution heatmaps
-- Grad-CAM overlays (model attention)
-
----
-
-## 📬 Contact
-
-For questions or contributions, reach out via GitHub Issues or connect with the team:
-
-- **[Srinivas Saiteja Tenneti](https://www.linkedin.com/in/srinivas-saiteja-tenneti/)**
-
----
-
 ## 🔗 References
 - [Dataset on IEEE Dataport](https://ieee-dataport.org/open-access/detecting-damaged-buildings-post-hurricane-satellite-imagery-based-customized)
 - [University of Washington Disaster Data Science Lab](https://disasterdatascience.org/)

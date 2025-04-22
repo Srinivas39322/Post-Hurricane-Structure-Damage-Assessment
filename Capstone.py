@@ -610,3 +610,70 @@ homogeneity = graycoprops(glcm, 'homogeneity')[0, 0]
 
 print("GLCM Features → Contrast:", contrast, "| Correlation:", correlation)
 
+
+## Setup and Data Preparation
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import os
+
+# Check for GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+# Paths
+train_dir = '/Users/SRINIVAS/Documents/Capstone Project/Post-hurricane/train_another'
+val_dir = '/Users/SRINIVAS/Documents/Capstone Project/Post-hurricane/validation_another'
+
+# Basic Transform (Resize + Normalize)
+transform_base = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.ToTensor(),
+])
+
+
+## Loading Datasets
+
+from torchvision.datasets import ImageFolder
+
+# Paths
+test_dir = '/Users/SRINIVAS/Documents/Capstone Project/Post-hurricane/test'
+
+# Load datasets (no augmentation)
+train_dataset = ImageFolder(root=train_dir, transform=transform_base)
+val_dataset = ImageFolder(root=val_dir, transform=transform_base)
+test_dataset = ImageFolder(root=test_dir, transform=transform_base)
+
+# DataLoaders
+batch_size = 32
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+# Class names
+class_names = train_dataset.classes
+print("Classes:", class_names)
+
+
+## Dataloaders with Image Augmentation (Training Only)
+
+# Augmentation: flip, rotate, color jitter — suitable for aerial image variation
+transform_augmented = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+    transforms.ToTensor(),
+])
+
+# Re-define datasets
+augmented_train_dataset = ImageFolder(root=train_dir, transform=transform_augmented)
+val_dataset = ImageFolder(root=val_dir, transform=transform_base)
+
+# Dataloaders
+train_loader_augmented = DataLoader(augmented_train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)  # Same as before
+

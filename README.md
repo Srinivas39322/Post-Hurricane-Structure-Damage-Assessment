@@ -45,15 +45,115 @@ This project builds an AI system that:
 - Streamlit-based real-time interface for multi-image upload
 
 ---
+# 📊 Exploratory Data Analysis (EDA)
 
-## 📊 Exploratory Data Analysis (EDA)
+To build a robust hurricane damage classification model, we performed in-depth exploratory data analysis (EDA) to uncover key visual and statistical signals differentiating damaged from undamaged structures.
 
-- **Pixel Mean & Std Dev** revealed subtle texture differences between damaged and undamaged classes.
-- **PCA**:
-  - Damaged: 70% variance in just 19 components
-  - Undamaged: Needed 56 components
-- **Pixel Intensity**: Damaged areas tend to be darker and more uniform.
-- **Geospatial Bias**: Model risks learning location-based patterns — spatial regularization needed.
+---
+
+## 🔍 Challenges in Damage Detection
+
+- **No Single Definition of "Damage"**: Can include debris, discoloration, roof collapse, or minor structural shifts.
+- **False Visual Triggers**: Materials scattered for other reasons can look like damage.
+- **Intra-Class Variability**: Buildings in the same class vary greatly in size, shape, and appearance.
+- **AI Ambiguity**: Damage is often subtle or context-dependent, making detection by machines inherently challenging.
+
+![image](https://github.com/user-attachments/assets/304b0a07-1594-4fc1-9030-b5f78195d851)
+
+---
+
+## 🖼️ Visual Inspection of Image Data
+
+- **Format**: RGB, 128×128 pixels  
+- **Content**: Aerial view of rooftops and structures post-hurricane
+
+**Observations:**
+- 🌊 Flood patterns with unique texture and tone  
+- 🧱 Scattered debris and damaged rooftops  
+- 👀 Human-eye struggle: Subtle patterns not always easily visible
+
+![image](https://github.com/user-attachments/assets/275333ca-20d6-4afb-a0ce-319b4611636b)
+
+
+---
+
+## 📈 Class Trends: Pixel-Level Averages
+
+We computed mean grayscale intensity across images in each class:
+
+| **Damage** | **No Damage** |
+|------------|---------------|
+| Brighter cores with dark surroundings | More uniform brightness across the image |
+| Suggests collapsed or open roof areas | Indicates intact, cleaner structural surfaces |
+
+![image](https://github.com/user-attachments/assets/f7a0bd29-f26e-47b9-8e12-f7542d5c4959)
+![image](https://github.com/user-attachments/assets/d5954013-1513-4a65-8297-c914fa632508)
+
+---
+
+## 🌡️ Standard Deviation: Visual Variability
+
+Pixel-wise standard deviation helps visualize variability:
+
+| **Damage** | **No Damage** |
+|------------|---------------|
+| Lower variation across the image | Higher variation near core structure |
+| Uniformity due to debris/flooding | Variation from visible rooftops and shadows |
+
+![image](https://github.com/user-attachments/assets/ac136e47-b346-4b13-bd15-f914f5e77cb6)
+![image](https://github.com/user-attachments/assets/47cdd7b4-53c5-431e-8947-003039732b97)
+
+
+---
+
+## 🧬 PCA Analysis: Dimensional Reduction
+
+Principal Component Analysis (PCA) was used to extract key visual patterns:
+
+| Class       | Components to explain 70% variance |
+|-------------|------------------------------------|
+| Damage      | 19                                 |
+| No Damage   | 56                                 |
+
+![image](https://github.com/user-attachments/assets/f3948859-619b-4baf-a833-d15f72b5a2ab)
+![image](https://github.com/user-attachments/assets/34b2ab83-34ae-4f0e-8a48-48f85660c5c8)
+
+
+> 🧠 **Insight**: Damaged images have more visual consistency, making them easier for models to learn from.
+
+---
+
+## 🧠 Raw Pixel Intensity Distribution
+
+We compared the mean intensity of the first 1,000 pixels across classes:
+
+- **Damage**: Lower, noisier intensity — possibly due to shadows and debris  
+- **No Damage**: Higher and smoother intensity — cleaner rooftops
+
+<img width="313" alt="image" src="https://github.com/user-attachments/assets/b8c5af9a-a1d2-4d86-9058-cc7bf68739f1" />
+
+
+---
+
+## 🌍 Geospatial Distribution of Images
+
+- Aerial tiles are spread across **Houston, Beaumont, and Victoria** (Texas)
+- Damage and no-damage classes cluster by location
+
+⚠️ **Risk**: Models might pick up on geographic cues instead of real damage features
+
+<img width="324" alt="image" src="https://github.com/user-attachments/assets/67e2147b-8690-45e6-a4a9-f3041d3da829" />
+
+
+---
+
+## ✅ Key Takeaways
+
+- **Strong statistical signals** in pixel-level data  
+- **Class imbalance handled**  
+- **Geographic clustering** introduces potential bias  
+- **PCA & intensity trends** support model learning
+
 
 ---
 

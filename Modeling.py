@@ -169,6 +169,32 @@ os.makedirs("models", exist_ok=True)
 torch.save(model.state_dict(), "models/simple_cnn_model.pt")
 print("✅ Best CNN model saved to models/simple_cnn_model.pt")
 
+"""
+CNN Model – Summary & Results
+Architecture:
+Custom CNN with 3 convolutional layers + 4 fully connected layers (ReLU + BatchNorm).
+
+Input:
+128×128 satellite images (damage vs no_damage)
+
+Training Setup:
+Optimizer: Adam (lr=1e-4)
+Loss: CrossEntropyLoss
+Epochs: 10 | Batch Size: 32
+Device: CUDA-enabled GPU
+
+Performance:
+Train Accuracy: ↑ from 88.25% to 99.48%
+Validation Accuracy: Peaked at 96.25%, stayed above 91%
+Loss: Reduced from 86.32 → 4.15
+
+✅ Positive:
+High validation accuracy indicates strong generalization to unseen data.
+
+⚠️ Drawbacks:
+Requires significant GPU compute and longer training time than lighter models.
+"""
+
 ==================================================================================================================================================
 
 # ===============================
@@ -267,6 +293,31 @@ print("🎉 ResNet50 Training Complete")
 print(f"🏆 Best Validation Accuracy: {best_val_acc:.4f}")
 print(f"📦 Best model saved at: {best_model_path}")
 
+"""
+ResNet50 – Transfer Learning Summary & Results
+Architecture:
+Pretrained ResNet50, modified for binary classification (damage, no_damage)
+
+Input:
+224×224 satellite images with ImageNet normalization + horizontal flip augmentation
+
+Training Setup:
+Optimizer: Adam (lr=1e-4)
+Loss Function: CrossEntropyLoss
+Epochs: 50 | Batch Size: 32
+Device: CUDA-enabled GPU (efficiently utilized)
+
+Performance:
+Best Validation Accuracy: ⭐ 97.3%
+Model saved at: models/best_resnet50_model.pt
+
+✅ Positive Outcome
+Faster and more efficient on GPU than the custom CNN, despite being a deeper architecture
+
+⚠️ Consideration
+Slightly larger model size, though inference time remains fast due to GPU optimization
+"""
+
 ==================================================================================================================================================
 
 # ===============================
@@ -356,6 +407,31 @@ for epoch in range(epochs):
 
 print(f"✅ Training complete. Best Acc: {best_acc:.4f}")
 
+"""
+ResNet50 – Technical Summary & Comparative Advantages
+Model Architecture & Setup
+Model: Pretrained ResNet50 (torchvision.models.resnet50)
+
+Final layer (fc) replaced with Linear(in_features, 2) for binary classification
+
+Input Size: 224×224
+
+Transforms:
+Resize + Normalize ([0.485, 0.456, 0.406] mean, [0.229, 0.224, 0.225] std) — matches ImageNet stats
+Optimizer: Adam (lr=1e-4)
+Loss: CrossEntropyLoss
+Epochs: 10
+Hardware: CUDA GPU
+
+ResNet50 – Key Advantages
+Achieved 99.50% validation accuracy, outperforming both the baseline ResNet50 and the custom CNN models.
+Required only 10 epochs to converge.
+Faster training than the custom CNN, due to optimized architecture and better GPU utilization.
+Used pretrained ImageNet weights, enabling stronger feature extraction and faster convergence.
+Delivered high inference speed with minimal tuning, making it ideal for deployment in real-time pipelines.
+Significantly improved generalization performance, with no signs of overfitting.
+"""
+
 ==================================================================================================================================================
 
 # ===============================
@@ -405,6 +481,26 @@ with torch.no_grad():
 
 accuracy = correct / total
 print(f"🧪 Accuracy on Test Another Set: {accuracy:.4f}")
+
+"""
+ResNet50 – Test Set Evaluation
+Purpose: Assessed the final model's generalization on unseen test data (test_another directory).
+
+Model Used: Best-performing ResNet50, fine-tuned and saved from the training phase.
+
+Setup:
+
+Input: 224×224 images with ImageNet normalization
+
+Device: Evaluated on GPU (CUDA)
+
+Batch Size: 32
+
+Process: Loaded model weights and ran forward passes without gradient computation.
+
+Result:
+✅ Achieved a Test Accuracy of 99.61%, confirming excellent generalization beyond training and validation datasets.
+"""
 
 ==================================================================================================================================================
 
@@ -467,3 +563,29 @@ plt.savefig(SAVE_PATH)
 plt.close()
 
 print(f"✅ Confusion matrix saved to: {SAVE_PATH}")
+
+"""
+Confusion Matrix – Test Set (ResNet50 Final)
+Summary
+Damage (positive class):
+Correctly predicted: 7,980
+Misclassified as no_damage: 20
+
+No Damage (negative class):
+Correctly predicted: 985
+Misclassified as damage: 15
+
+Total Test Accuracy: 99.61%
+
+Pros
+High true positive and true negative counts, indicating balanced performance across both classes.
+Very low false negatives (20) and false positives (15) — critical for minimizing both missed damage and false alarms.
+Model generalizes extremely well on unseen data, reaffirming robustness.
+
+Cons
+Minor misclassifications still occur, which could impact edge cases in real-world scenarios (e.g., faint or borderline damage).
+"""
+
+==================================================================================================================================================
+
+

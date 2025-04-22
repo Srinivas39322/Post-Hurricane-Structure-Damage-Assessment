@@ -358,3 +358,112 @@ print(f"✅ Training complete. Best Acc: {best_acc:.4f}")
 
 ==================================================================================================================================================
 
+# ===============================
+# Resnet50 Model - Final - Testing on Test_Another Data
+# ===============================
+
+import torch
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+
+# --- Config ---
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 32
+IMG_SIZE = 224
+NUM_CLASSES = 2
+
+# --- Transform ---
+transform_test = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
+# --- Load test_another dataset ---
+test_dir = "Post-hurricane/test_another"
+test_dataset = datasets.ImageFolder(test_dir, transform=transform_test)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+# --- Load model and weights ---
+model = models.resnet50(weights=None)
+model.fc = torch.nn.Linear(model.fc.in_features, NUM_CLASSES)
+model.load_state_dict(torch.load("models/best_resnet50_model.pt"))
+model.to(DEVICE)
+model.eval()
+
+# --- Evaluate on test_another ---
+correct = 0
+total = 0
+with torch.no_grad():
+    for images, labels in test_loader:
+        images, labels = images.to(DEVICE), labels.to(DEVICE)
+        outputs = model(images)
+        preds = outputs.argmax(dim=1)
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
+
+accuracy = correct / total
+print(f"🧪 Accuracy on Test Another Set: {accuracy:.4f}")
+
+==================================================================================================================================================
+
+# ===============================
+# Resnet50 Model - Confusion Matrix
+# ===============================
+
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms, models
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+import os
+
+# Config
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+TEST_DIR = "Post-hurricane/test_another"
+MODEL_PATH = "models/best_resnet50_model.pt"
+SAVE_PATH = "models/confusion_matrix_test_another.png"
+
+# Load Model
+model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+model.fc = nn.Linear(model.fc.in_features, 2)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+model = model.to(DEVICE)
+model.eval()
+
+# Load Test Set
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+test_dataset = datasets.ImageFolder(TEST_DIR, transform=transform)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+# Collect Predictions
+all_preds = []
+all_labels = []
+
+with torch.no_grad():
+    for images, labels in test_loader:
+        images, labels = images.to(DEVICE), labels.to(DEVICE)
+        outputs = model(images)
+        preds = outputs.argmax(dim=1)
+        all_preds.extend(preds.cpu().numpy())
+        all_labels.extend(labels.cpu().numpy())
+
+# Generate Confusion Matrix
+cm = confusion_matrix(all_labels, all_preds)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=test_dataset.classes)
+
+# Save as image
+fig, ax = plt.subplots(figsize=(6, 6))
+disp.plot(cmap='Blues', ax=ax)
+plt.title("Confusion Matrix - Test Another Set")
+plt.tight_layout()
+plt.savefig(SAVE_PATH)
+plt.close()
+
+print(f"✅ Confusion matrix saved to: {SAVE_PATH}")
